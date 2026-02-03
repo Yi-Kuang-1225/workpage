@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html class="light" lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>MOEA Corporate Productivity Hub (Offline)</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary-navy": "#00338D",
+                        "primary-teal": "#00B2A9",
+                        "moea-bg": "#F8FAFC",
+                        "gemini-start": "#4E79D3",
+                        "gemini-end": "#D6737D",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" },
+                    animation: {
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    }
+                },
+            },
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer components {
+            .glass {
+                background: rgba(255, 255, 255, 0.85);
+                backdrop-filter: blur(12px);
+                -webkit-backdrop-filter: blur(12px);
+                border-right: 1px solid rgba(0, 51, 141, 0.1);
+            }
+            .sidebar-item {
+                @apply flex items-start gap-3 p-3 rounded-lg transition-all cursor-pointer border border-transparent select-none;
+            }
+            .sidebar-item:hover {
+                background: rgba(0, 178, 169, 0.05);
+                border-color: rgba(0, 178, 169, 0.1);
+            }
+            .calendar-grid {
+                display: grid;
+                grid-template-columns: repeat(7, 1fr);
+                gap: 4px;
+            }
+            .calendar-day {
+                @apply aspect-square flex items-center justify-center text-[10px] font-medium rounded-md;
+            }
+            /* Checkbox custom style */
+            input[type="checkbox"]:checked + div span:first-child {
+                text-decoration: line-through;
+                color: #94a3b8;
+            }
+            /* Edit Mode Styles */
+            .edit-mode .workspace-card {
+                @apply border-primary-teal border-dashed bg-slate-50;
+                animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+            }
+            @keyframes shake {
+                10%, 90% { transform: translate3d(-1px, 0, 0); }
+                20%, 80% { transform: translate3d(2px, 0, 0); }
+                30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+                40%, 60% { transform: translate3d(4px, 0, 0); }
+            }
+            
+            /* AI Tool Gradients */
+            .gemini-gradient {
+                background: linear-gradient(135deg, #4E79D3 0%, #9F6CD4 50%, #D6737D 100%);
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+            }
+        }
+    </style>
+</head>
+<body class="bg-moea-bg font-display text-[#1e293b] transition-colors duration-300">
+    <div class="relative flex min-h-screen w-full flex-col overflow-x-hidden">
+        
+        <!-- Sidebar: The Strategic Oversight Panel -->
+        <!-- Fixed layout structure: Logo is pinned, content scrolls -->
+        <aside class="fixed left-0 top-0 bottom-0 w-[320px] glass z-50 hidden md:flex flex-col">
+            
+            <!-- Fixed Strategic Totem (Logo) - Pinned to Top -->
+            <div class="px-6 pt-10 pb-6 border-b border-slate-100/80 shrink-0 bg-white/50 backdrop-blur-sm z-20">
+                <div class="flex flex-col items-start gap-4">
+                    <!-- Enlarged Logo Container -->
+                    <div class="w-full max-w-[240px]">
+                        <svg class="w-full h-auto drop-shadow-sm" fill="none" viewBox="0 0 100 60" xmlns="http://www.w3.org/2000/svg">
+                            <rect fill="#00338D" height="15" width="100"></rect>
+                            <rect fill="#00338D" height="15" width="25" y="22.5"></rect>
+                            <rect fill="#00B2A9" height="15" width="65" x="35" y="22.5"></rect>
+                            <rect fill="#00338D" height="15" width="100" y="45"></rect>
+                        </svg>
+                    </div>
+                    <div class="flex flex-col gap-0.5">
+                        <h2 class="text-2xl font-bold text-primary-navy tracking-tight">經濟部</h2>
+                        <p class="text-[11px] text-slate-500 font-semibold uppercase tracking-wider">Ministry of Economic Affairs</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Scrollable Tactical Area -->
+            <div class="flex-1 overflow-y-auto px-6 py-6 scrollbar-hide">
+                <!-- Work Hours Calculator -->
+                <div class="mb-8 bg-slate-50 p-3 rounded-lg border border-slate-100">
+                    <h3 class="text-[10px] font-bold text-primary-navy uppercase tracking-widest mb-2 flex items-center gap-1">
+                        <span class="material-symbols-outlined text-[14px]">schedule</span>
+                        Attendance Check
+                    </h3>
+                    <div class="flex items-center gap-2 mb-1">
+                        <div class="flex-1">
+                            <label class="text-[9px] text-slate-400 font-bold uppercase">Check-in</label>
+                            <input id="check-in-time" type="time" class="w-full bg-white border border-slate-200 rounded text-xs px-2 py-1 text-slate-700 focus:ring-1 focus:ring-primary-teal focus:border-primary-teal" value="08:45">
+                        </div>
+                        <div class="flex items-center pt-4">
+                            <span class="material-symbols-outlined text-slate-300 text-sm">arrow_forward</span>
+                        </div>
+                        <div class="flex-1">
+                            <label class="text-[9px] text-slate-400 font-bold uppercase">Off-duty</label>
+                            <div id="off-duty-time" class="w-full bg-primary-teal/10 border border-primary-teal/20 rounded text-xs px-2 py-1.5 text-primary-teal font-bold text-center">
+                                17:45
+                            </div>
+                        </div>
+                    </div>
+                    <p class="text-[9px] text-slate-400 text-center mt-1">+9 Hours Regulation</p>
+                </div>
+
+                <!-- Task Management -->
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="text-sm font-bold text-primary-navy flex items-center gap-2 uppercase tracking-wider">
+                        <span class="material-symbols-outlined text-primary-teal text-lg">task_alt</span>
+                        Today's Tasks
+                    </h2>
+                    <span id="active-tasks-count" class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary-teal/10 text-primary-teal">LOADING</span>
+                </div>
+                
+                <div class="mb-6">
+                    <div class="relative group">
+                        <input id="new-task-input" class="w-full bg-slate-100 border-none rounded-lg py-2.5 pl-9 pr-4 text-xs focus:ring-1 focus:ring-primary-teal/50 transition-all placeholder:text-slate-400" placeholder="Type & Enter to add task..." type="text"/>
+                        <span class="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-[18px] text-slate-400 group-focus-within:text-primary-teal transition-colors">add</span>
+                    </div>
+                </div>
+
+                <div class="flex flex-col gap-2" id="task-list-container">
+                    <!-- Dynamic Tasks Rendered Here -->
+                </div>
+
+                <!-- Calendar: Timeline Control -->
+                <div class="mt-10 border-t border-slate-100 pt-8">
+                    <div class="flex items-center justify-between mb-4 px-1">
+                        <h3 class="text-[11px] font-bold text-primary-navy uppercase tracking-widest">October 2023</h3>
+                        <div class="flex gap-1">
+                            <button class="material-symbols-outlined text-[16px] text-slate-400 hover:text-primary-teal transition-colors">chevron_left</button>
+                            <button class="material-symbols-outlined text-[16px] text-slate-400 hover:text-primary-teal transition-colors">chevron_right</button>
+                        </div>
+                    </div>
+                    <div class="calendar-grid text-slate-400 text-[9px] font-bold text-center mb-2">
+                        <div>S</div><div>M</div><div>T</div><div>W</div><div>T</div><div>F</div><div>S</div>
+                    </div>
+                    <div class="calendar-grid">
+                        <div class="calendar-day text-slate-300">24</div>
+                        <div class="calendar-day text-slate-300">25</div>
+                        <div class="calendar-day text-slate-300">26</div>
+                        <div class="calendar-day text-slate-300">27</div>
+                        <div class="calendar-day text-slate-300">28</div>
+                        <div class="calendar-day text-slate-300">29</div>
+                        <div class="calendar-day text-slate-300">30</div>
+                        <div class="calendar-day text-slate-700">1</div>
+                        <div class="calendar-day text-slate-700">2</div>
+                        <div class="calendar-day text-slate-700">3</div>
+                        <div class="calendar-day text-slate-700">4</div>
+                        <div class="calendar-day text-slate-700">5</div>
+                        <div class="calendar-day text-slate-700">6</div>
+                        <div class="calendar-day text-slate-700">7</div>
+                        <div class="calendar-day text-slate-700">8</div>
+                        <div class="calendar-day text-slate-700">9</div>
+                        <div class="calendar-day text-slate-700">10</div>
+                        <div class="calendar-day text-slate-700">11</div>
+                        <div class="calendar-day text-slate-700">12</div>
+                        <div class="calendar-day text-slate-700">13</div>
+                        <div class="calendar-day text-slate-700">14</div>
+                        <div class="calendar-day text-slate-700">15</div>
+                        <div class="calendar-day text-slate-700">16</div>
+                        <div class="calendar-day text-slate-700">17</div>
+                        <div class="calendar-day text-slate-700">18</div>
+                        <div class="calendar-day text-slate-700">19</div>
+                        <div class="calendar-day text-slate-700">20</div>
+                        <div class="calendar-day text-slate-700">21</div>
+                        <div class="calendar-day text-slate-700">22</div>
+                        <div class="calendar-day bg-primary-teal text-white font-bold shadow-lg shadow-primary-teal/20">23</div>
+                        <div class="calendar-day text-slate-700">24</div>
+                        <div class="calendar-day text-slate-700">25</div>
+                        <div class="calendar-day text-slate-700">26</div>
+                        <div class="calendar-day text-slate-700">27</div>
+                        <div class="calendar-day text-slate-700">28</div>
+                    </div>
+                </div>
+
+                <div class="mt-auto pt-6">
+                    <button class="w-full flex items-center justify-center gap-2 py-2 text-[10px] font-bold text-slate-400 hover:text-primary-navy transition-colors">
+                        <span class="material-symbols-outlined text-[16px]">history</span>
+                        SYSTEM LOGS
+                    </button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Workspace -->
+        <main class="flex flex-1 flex-col items-center py-12 px-4 md:ml-[320px] transition-all">
+            
+            <header class="w-full max-w-[960px] flex items-center justify-between gap-6 mb-8 px-4">
+                <!-- Strategic Intelligence (Top Left Command Bar) -->
+                <div class="flex items-center gap-3">
+                    <a href="https://gemini.google.com/" target="_blank" class="group flex items-center gap-2 p-2 pr-4 rounded-full border border-slate-200 bg-white hover:border-[#4E79D3]/50 hover:shadow-md transition-all">
+                        <div class="size-8 rounded-full bg-gradient-to-br from-[#4E79D3] via-[#9F6CD4] to-[#D6737D] flex items-center justify-center text-white shadow-sm">
+                            <span class="material-symbols-outlined text-[18px]">sparkle</span>
+                        </div>
+                        <span class="text-xs font-bold text-slate-700 group-hover:gemini-gradient transition-colors">Gemini Pro</span>
+                    </a>
+
+                    <a href="https://notebooklm.google.com/" target="_blank" class="group flex items-center gap-2 p-2 pr-4 rounded-full border border-slate-200 bg-white hover:border-slate-300 hover:shadow-md transition-all">
+                        <div class="size-8 rounded-full bg-white border border-slate-100 flex items-center justify-center text-slate-700 shadow-sm relative overflow-hidden">
+                            <span class="material-symbols-outlined text-[18px] text-slate-600">menu_book</span>
+                        </div>
+                        <span class="text-xs font-bold text-slate-700">NotebookLM</span>
+                    </a>
+                </div>
+
+                <!-- Identity (Top Right) -->
+                <div class="flex items-center gap-4">
+                    <div class="flex items-center gap-3 cursor-pointer">
+                        <div class="text-right hidden sm:block">
+                            <p class="text-xs font-bold text-primary-navy leading-none">YiKuang Chen</p>
+                        </div>
+                        <div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-9 border border-slate-200 shadow-sm" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuBqo_yoI8IsocAdzfD3VSGLMwVwa9MWtWk6_6Ia7aX9JSHdrXfNp4_Htuk6lrJQKsUtCAkaPibAJqTOCVm37hbe98oIV7QVvLm-cynaBydeUWzCuQ_gaJDNe_wya2S1DHoi4_orRAqdLgUcIvESNPYwodWTQ6nqcFM5AfHmLgB8oMTYF9Qk_eOfJH7xBSHdBB7MMnvuNSCcf0hSGTJtbd1SPDat69nxhaD01Dl406exjUfNR5MuA2JlYihfpHYr87H9IjW-sBZp3-oe");'></div>
+                    </div>
+                </div>
+            </header>
+
+            <div class="layout-content-container flex flex-col max-w-[960px] w-full gap-10">
+                
+                <!-- Time & Identity Section (Real-time) -->
+                <div class="flex flex-col items-center">
+                    <div class="flex gap-2 mb-4">
+                        <div class="flex items-center justify-center bg-white border border-slate-100 rounded-xl px-4 py-2 shadow-sm min-w-[70px]">
+                            <p id="clock-hour" class="text-primary-teal text-3xl font-bold tracking-tight">--</p>
+                        </div>
+                        <div class="flex items-center justify-center text-primary-navy font-bold text-2xl">:</div>
+                        <div class="flex items-center justify-center bg-white border border-slate-100 rounded-xl px-4 py-2 shadow-sm min-w-[70px]">
+                            <p id="clock-min" class="text-primary-teal text-3xl font-bold tracking-tight">--</p>
+                        </div>
+                    </div>
+                    <h1 class="text-primary-navy tracking-tight text-[32px] md:text-[42px] font-bold leading-tight px-4 text-center">
+                        Ministry Operations Hub
+                    </h1>
+                    <p id="current-date-display" class="text-center text-slate-400 text-sm font-medium mt-2">Connecting to Temporal Server...</p>
+                </div>
+
+                <!-- Strategic Google Search -->
+                <div class="w-full max-w-[720px] mx-auto">
+                    <form action="https://www.google.com/search" method="GET" target="_blank" class="flex flex-col h-14 w-full group">
+                        <div class="flex w-full flex-1 items-stretch rounded-xl h-full bg-white border border-slate-200 shadow-sm group-focus-within:ring-2 group-focus-within:ring-primary-teal/20 group-focus-within:border-primary-teal transition-all overflow-hidden">
+                            <div class="text-slate-400 flex items-center justify-center pl-6">
+                                <span class="material-symbols-outlined">public</span>
+                            </div>
+                            <input name="q" class="form-input flex w-full min-w-0 flex-1 border-none focus:ring-0 bg-transparent h-full placeholder:text-slate-300 px-4 text-base font-medium" placeholder="Search Google Global Database..."/>
+                            <div class="flex items-center pr-4">
+                                <button type="submit" class="text-[9px] font-bold px-2 py-1 rounded bg-slate-50 border border-slate-100 text-slate-400 tracking-tighter hover:text-primary-navy hover:bg-slate-100">SEARCH</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="w-full">
+                    <div class="flex items-center justify-between px-4 pb-6">
+                        <h2 class="text-primary-navy text-lg font-bold tracking-tight uppercase">Corporate Workspaces</h2>
+                        <button id="toggle-config-btn" class="text-primary-teal text-xs font-bold hover:underline flex items-center gap-1 transition-all hover:text-primary-navy">
+                            <span class="material-symbols-outlined text-[14px]">tune</span>
+                            <span id="config-btn-text">Configure</span>
+                        </button>
+                    </div>
+                    
+                    <div id="workspaces-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 px-4">
+                        <!-- Dynamic Workspaces Rendered Here -->
+                    </div>
+                </div>
+
+                <div class="flex flex-wrap gap-3 px-4 py-8 mt-4 border-t border-slate-200">
+                    <div id="sync-status" class="flex items-center gap-2 bg-white border border-slate-100 px-3 py-1.5 rounded-full shadow-sm cursor-default">
+                        <span class="material-symbols-outlined text-primary-teal text-base">cloud_off</span>
+                        <span class="text-[10px] font-bold text-slate-600 uppercase tracking-tighter">Secure Offline Mode</span>
+                    </div>
+                </div>
+
+                <footer class="w-full py-8 text-center">
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] opacity-60 hover:opacity-100 transition-opacity">
+                        © 2023 Ministry of Economic Affairs Productivity Hub • Restricted Corporate Access
+                    </p>
+                </footer>
+            </div>
+        </main>
+    </div>
+
+    <!-- Hidden Dialog for Editing Workspaces -->
+    <dialog id="workspace-dialog" class="p-0 rounded-xl shadow-2xl backdrop:bg-slate-900/50 backdrop:backdrop-blur-sm border border-slate-100 w-[400px]">
+        <form method="dialog" class="flex flex-col">
+            <div class="p-6 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
+                <h3 class="font-bold text-primary-navy">Edit Workspace</h3>
+                <button value="cancel" class="text-slate-400 hover:text-slate-600"><span class="material-symbols-outlined">close</span></button>
+            </div>
+            <div class="p-6 flex flex-col gap-4">
+                <div class="flex flex-col gap-1">
+                    <label class="text-[10px] font-bold text-slate-400 uppercase">Title</label>
+                    <input id="edit-ws-title" class="text-sm font-bold text-slate-700 bg-slate-50 border border-slate-200 rounded-lg p-2 focus:ring-primary-teal focus:border-primary-teal" type="text" />
+                </div>
+                <div class="flex flex-col gap-1">
+                    <label class="text-[10px] font-bold text-slate-400 uppercase">Description</label>
+                    <textarea id="edit-ws-desc" rows="3" class="text-xs text-slate-500 bg-slate-50 border border-slate-200 rounded-lg p-2 focus:ring-primary-teal focus:border-primary-teal"></textarea>
+                </div>
+                <div class="flex flex-col gap-1">
+                    <label class="text-[10px] font-bold text-slate-400 uppercase">Target Link (URL)</label>
+                    <input id="edit-ws-link" class="text-xs text-slate-500 bg-slate-50 border border-slate-200 rounded-lg p-2 focus:ring-primary-teal focus:border-primary-teal" type="text" placeholder="https://..." />
+                </div>
+                <div class="flex flex-col gap-1">
+                    <label class="text-[10px] font-bold text-slate-400 uppercase">Icon (Material Symbol)</label>
+                    <input id="edit-ws-icon" class="text-xs text-slate-500 bg-slate-50 border border-slate-200 rounded-lg p-2 focus:ring-primary-teal focus:border-primary-teal" type="text" />
+                </div>
+                <input type="hidden" id="edit-ws-id" />
+            </div>
+            <div class="p-4 border-t border-slate-100 flex justify-between bg-slate-50/50">
+                <button id="delete-ws-btn" type="button" class="px-4 py-2 text-xs font-bold text-white bg-red-500 rounded-lg hover:bg-red-600 shadow-sm flex items-center gap-1 transition-colors">
+                    <span class="material-symbols-outlined text-[14px]">delete</span>
+                    Delete
+                </button>
+                <div class="flex gap-2">
+                    <button value="cancel" class="px-4 py-2 text-xs font-bold text-slate-500 hover:text-slate-700">Cancel</button>
+                    <button id="save-ws-btn" value="default" class="px-4 py-2 text-xs font-bold bg-primary-navy text-white rounded-lg hover:bg-primary-teal transition-colors shadow-sm">Save Changes</button>
+                </div>
+            </div>
+        </form>
+    </dialog>
+    
+    <script>
+        // Offline Capability Engine (LocalStorage) - Updated to v6 for new structure
+        const STORAGE_KEY = 'moea_hub_state_v6_offline';
+        let isConfigMode = false;
+        
+        // Default Strategy Layout (Updated Strategic Resources)
+        const defaultState = {
+            tasks: [
+                { id: "t1", text: "Review Trade Policy Draft", meta: "International Trade • 14:00", done: false },
+                { id: "t2", text: "Internal Budget Sync", meta: "Finance • 16:30", done: false },
+                { id: "t3", text: "Update MOEA Hub Assets", meta: "Administration • Urgent", done: false }
+            ],
+            workspaces: [
+                { 
+                    id: "w_rocket", 
+                    title: "Rocket Note", 
+                    desc: "External rapid note-taking tool for strategy drafting.", 
+                    icon: "rocket_launch", 
+                    link: "https://bulletnote.vercel.app/" 
+                },
+                { 
+                    id: "w_prompt", 
+                    title: "Prompt Input", 
+                    desc: "Strategic command interface for AI model directives.", 
+                    icon: "terminal", 
+                    link: "https://input-prompt.vercel.app/" 
+                },
+                { 
+                    id: "w_us_market", 
+                    title: "US Market", 
+                    desc: "Real-time surveillance of Western economic indicators.", 
+                    icon: "show_chart", 
+                    link: "https://strategic-command-center-one.vercel.app/" 
+                },
+                { 
+                    id: "w_vcp", 
+                    title: "VCP Analysis", 
+                    desc: "Volatility Contraction Pattern analysis for asset management.", 
+                    icon: "analytics", 
+                    link: "https://us-stock-analysis-csv.vercel.app/" 
+                },
+                { 
+                    id: "w_keep", 
+                    title: "Working Keep", 
+                    desc: "Persistent project tracking and GitHub integration.", 
+                    icon: "inventory", 
+                    link: "https://gihubkeep.vercel.app/" 
+                },
+                {
+                    id: "w_life_log",
+                    title: "Life Log",
+                    desc: "Personal archives and daily logs for long-term tracking.",
+                    icon: "history_edu",
+                    link: "https://gemini.google.com/u/0/share/fd2e42419859?pageId=none"
+                }
+            ]
+        };
+
+        let appState = JSON.parse(JSON.stringify(defaultState)); // Init
+
+        // Initialize from LocalStorage
+        function initApp() {
+            const savedState = localStorage.getItem(STORAGE_KEY);
+            if (savedState) {
+                try {
+                    const parsed = JSON.parse(savedState);
+                    appState = { ...defaultState, ...parsed }; // Merge to ensure structure
+                    if(!appState.tasks) appState.tasks = defaultState.tasks;
+                    if(!appState.workspaces) appState.workspaces = defaultState.workspaces;
+                } catch(e) {
+                    console.error("Local Intel Corrupted, resetting to default protocol.");
+                    appState = JSON.parse(JSON.stringify(defaultState));
+                }
+            } else {
+                // First time loading v6, save defaults immediately
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+            }
+            renderAll();
+        }
+
+        // Save Command
+        window.saveCurrentState = function() {
+            const statusEl = document.getElementById('sync-status').querySelector('span:last-child');
+            statusEl.textContent = "Saving...";
+            
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+            
+            setTimeout(() => {
+                statusEl.textContent = "Secure Offline Mode";
+            }, 300);
+        };
+
+        // --- Clock & Calculator Logic ---
+        function updateClock() {
+            const now = new Date();
+            const h = String(now.getHours()).padStart(2, '0');
+            const m = String(now.getMinutes()).padStart(2, '0');
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            
+            document.getElementById('clock-hour').textContent = h;
+            document.getElementById('clock-min').textContent = m;
+            document.getElementById('current-date-display').textContent = now.toLocaleDateString('en-US', options) + " | Welcome back, YiKuang";
+        }
+        setInterval(updateClock, 1000);
+        updateClock(); // Initial call
+
+        // Work Hours Calculator
+        const checkInInput = document.getElementById('check-in-time');
+        const offDutyDisplay = document.getElementById('off-duty-time');
+
+        checkInInput.addEventListener('change', calculateOffDuty);
+        
+        function calculateOffDuty() {
+            const val = checkInInput.value; // HH:mm
+            if (!val) return;
+            
+            const [h, m] = val.split(':').map(Number);
+            let endH = h + 9;
+            let endM = m;
+            
+            // Handle day rollover if needed
+            if (endH >= 24) endH -= 24;
+            
+            const formattedH = String(endH).padStart(2, '0');
+            const formattedM = String(endM).padStart(2, '0');
+            
+            offDutyDisplay.textContent = `${formattedH}:${formattedM}`;
+        }
+        calculateOffDuty(); // Initial calc
+
+        // --- UI Rendering Logic ---
+
+        function renderAll() {
+            renderTasks();
+            renderWorkspaces();
+        }
+
+        // Task Rendering & Logic
+        function renderTasks() {
+            const container = document.getElementById('task-list-container');
+            container.innerHTML = '';
+            
+            const activeCount = appState.tasks.filter(t => !t.done).length;
+            document.getElementById('active-tasks-count').textContent = `${activeCount} ACTIVE`;
+
+            appState.tasks.forEach((task, index) => {
+                const label = document.createElement('label');
+                label.className = 'sidebar-item group relative';
+                
+                // Strike style
+                const textDecoration = task.done ? 'line-through text-slate-300' : 'text-slate-700';
+                const opacity = task.done ? 'opacity-50' : 'opacity-100';
+                label.classList.add(opacity);
+
+                label.innerHTML = `
+                    <input type="checkbox" class="mt-1 w-4 h-4 rounded border-slate-300 text-primary-teal focus:ring-primary-teal bg-white cursor-pointer" ${task.done ? 'checked' : ''}>
+                    <div class="flex flex-col flex-1 min-w-0">
+                        <input type="text" class="task-input text-xs font-semibold ${textDecoration} bg-transparent border-none p-0 focus:ring-0 w-full" value="${task.text}">
+                        <input type="text" class="meta-input text-[10px] text-slate-400 bg-transparent border-none p-0 focus:ring-0 w-full" value="${task.meta}">
+                    </div>
+                    <button class="delete-task opacity-0 group-hover:opacity-100 text-slate-300 hover:text-red-400 material-symbols-outlined text-[16px] absolute right-2">delete</button>
+                `;
+
+                // Events
+                const checkbox = label.querySelector('input[type="checkbox"]');
+                checkbox.addEventListener('change', () => {
+                    appState.tasks[index].done = checkbox.checked;
+                    window.saveCurrentState();
+                });
+
+                const taskInput = label.querySelector('.task-input');
+                taskInput.addEventListener('change', (e) => {
+                    appState.tasks[index].text = e.target.value;
+                    window.saveCurrentState();
+                });
+
+                const metaInput = label.querySelector('.meta-input');
+                metaInput.addEventListener('change', (e) => {
+                    appState.tasks[index].meta = e.target.value;
+                    window.saveCurrentState();
+                });
+
+                const delBtn = label.querySelector('.delete-task');
+                delBtn.addEventListener('click', (e) => {
+                    e.preventDefault(); 
+                    appState.tasks.splice(index, 1);
+                    window.saveCurrentState();
+                });
+
+                container.appendChild(label);
+            });
+        }
+
+        // Add Task Logic
+        document.getElementById('new-task-input').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && e.target.value.trim() !== '') {
+                appState.tasks.unshift({
+                    id: 't' + Date.now(),
+                    text: e.target.value,
+                    meta: "General • Now",
+                    done: false
+                });
+                e.target.value = '';
+                window.saveCurrentState();
+            }
+        });
+
+        // Workspace Rendering & Logic
+        function renderWorkspaces() {
+            const container = document.getElementById('workspaces-grid');
+            container.innerHTML = '';
+            
+            // Toggle classes for edit mode
+            if (isConfigMode) {
+                container.classList.add('edit-mode');
+            } else {
+                container.classList.remove('edit-mode');
+            }
+
+            appState.workspaces.forEach((ws, index) => {
+                const card = document.createElement('div');
+                card.className = `workspace-card group flex flex-col p-6 rounded-xl bg-white border border-slate-100 shadow-sm transition-all duration-300 ${isConfigMode ? 'cursor-alias' : 'cursor-pointer hover:shadow-lg hover:-translate-y-1 hover:border-primary-teal/30'}`;
+                
+                card.innerHTML = `
+                    <div class="flex justify-between items-start mb-5">
+                        <div class="size-12 rounded-lg bg-primary-navy text-white flex items-center justify-center group-hover:bg-primary-teal transition-colors duration-300">
+                            <span class="material-symbols-outlined text-2xl">${ws.icon || 'folder'}</span>
+                        </div>
+                        ${isConfigMode ? '<span class="material-symbols-outlined text-primary-teal text-xl animate-bounce">edit</span>' : ''}
+                    </div>
+                    <h3 class="font-bold text-slate-800 mb-1 group-hover:text-primary-navy transition-colors">${ws.title}</h3>
+                    <p class="text-xs text-slate-500 leading-relaxed line-clamp-3">${ws.desc}</p>
+                `;
+
+                card.addEventListener('click', (e) => {
+                    if (isConfigMode) {
+                        openEditDialog(index);
+                    } else {
+                        e.stopPropagation();
+                        if(ws.link && ws.link.trim() !== "") {
+                            try {
+                                if (ws.link.startsWith('http')) {
+                                    window.open(ws.link, '_blank');
+                                } else {
+                                    window.location.href = ws.link;
+                                }
+                            } catch (error) {
+                                // Silent fail
+                            }
+                        }
+                    }
+                });
+
+                container.appendChild(card);
+            });
+
+            // "Add Workspace" Button
+            const addCard = document.createElement('div');
+            addCard.className = `group cursor-pointer flex flex-col p-6 rounded-xl border-2 border-dashed border-slate-200 items-center justify-center hover:bg-white hover:border-primary-teal/50 hover:shadow-sm transition-all duration-300 min-h-[200px]`;
+            addCard.innerHTML = `
+                <div class="size-10 rounded-full bg-slate-50 text-slate-400 flex items-center justify-center mb-2 group-hover:bg-primary-teal/10 group-hover:text-primary-teal transition-all">
+                    <span class="material-symbols-outlined">add</span>
+                </div>
+                <span class="text-xs font-bold text-slate-400 group-hover:text-primary-teal transition-colors">Add Workspace</span>
+            `;
+            addCard.addEventListener('click', () => {
+                const newId = 'w' + Date.now();
+                appState.workspaces.push({
+                    id: newId,
+                    title: "New Workspace",
+                    desc: "Click Configure to edit.",
+                    icon: "dataset",
+                    link: ""
+                });
+                window.saveCurrentState();
+            });
+            container.appendChild(addCard);
+        }
+
+        // Configuration Mode Logic
+        const configBtn = document.getElementById('toggle-config-btn');
+        const configText = document.getElementById('config-btn-text');
+        
+        configBtn.addEventListener('click', () => {
+            isConfigMode = !isConfigMode;
+            configText.textContent = isConfigMode ? "Done" : "Configure";
+            configBtn.classList.toggle('text-red-500'); 
+            renderWorkspaces();
+        });
+
+        // Dialog Logic
+        const dialog = document.getElementById('workspace-dialog');
+        const saveWsBtn = document.getElementById('save-ws-btn');
+        const deleteWsBtn = document.getElementById('delete-ws-btn');
+        let currentEditIndex = -1;
+
+        function openEditDialog(index) {
+            currentEditIndex = index;
+            const ws = appState.workspaces[index];
+            document.getElementById('edit-ws-title').value = ws.title;
+            document.getElementById('edit-ws-desc').value = ws.desc;
+            document.getElementById('edit-ws-link').value = ws.link;
+            document.getElementById('edit-ws-icon').value = ws.icon;
+            dialog.showModal();
+        }
+
+        saveWsBtn.addEventListener('click', (e) => {
+            e.preventDefault(); 
+            if (currentEditIndex > -1) {
+                appState.workspaces[currentEditIndex].title = document.getElementById('edit-ws-title').value.trim();
+                appState.workspaces[currentEditIndex].desc = document.getElementById('edit-ws-desc').value.trim();
+                appState.workspaces[currentEditIndex].link = document.getElementById('edit-ws-link').value.trim();
+                appState.workspaces[currentEditIndex].icon = document.getElementById('edit-ws-icon').value.trim();
+                window.saveCurrentState();
+                dialog.close();
+            }
+        });
+
+        deleteWsBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            if (currentEditIndex > -1) {
+                if(confirm("Confirm removal of this workspace node?")) {
+                    appState.workspaces.splice(currentEditIndex, 1);
+                    window.saveCurrentState();
+                    dialog.close();
+                }
+            }
+        });
+
+        // Start
+        initApp();
+
+    </script>
+</body>
+</html>
