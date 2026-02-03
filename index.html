@@ -514,15 +514,18 @@
                 checkbox.addEventListener('change', () => {
                     appState.tasks[index].done = checkbox.checked;
                     window.saveCurrentState();
+                    renderTasks(); // Immediate visual feedback
                 });
 
                 const taskInput = label.querySelector('.task-input');
+                taskInput.addEventListener('click', (e) => e.preventDefault()); // Stop label click
                 taskInput.addEventListener('change', (e) => {
                     appState.tasks[index].text = e.target.value;
                     window.saveCurrentState();
                 });
 
                 const metaInput = label.querySelector('.meta-input');
+                metaInput.addEventListener('click', (e) => e.preventDefault()); // Stop label click
                 metaInput.addEventListener('change', (e) => {
                     appState.tasks[index].meta = e.target.value;
                     window.saveCurrentState();
@@ -533,6 +536,7 @@
                     e.preventDefault(); 
                     appState.tasks.splice(index, 1);
                     window.saveCurrentState();
+                    renderTasks(); // Immediate visual feedback
                 });
 
                 container.appendChild(label);
@@ -550,6 +554,7 @@
                 });
                 e.target.value = '';
                 window.saveCurrentState();
+                renderTasks(); // Immediate visual feedback
             }
         });
 
@@ -621,6 +626,7 @@
                     link: ""
                 });
                 window.saveCurrentState();
+                renderWorkspaces(); // Immediate visual feedback
             });
             container.appendChild(addCard);
         }
@@ -660,6 +666,7 @@
                 appState.workspaces[currentEditIndex].link = document.getElementById('edit-ws-link').value.trim();
                 appState.workspaces[currentEditIndex].icon = document.getElementById('edit-ws-icon').value.trim();
                 window.saveCurrentState();
+                renderWorkspaces(); // Immediate visual feedback
                 dialog.close();
             }
         });
@@ -670,6 +677,7 @@
                 if(confirm("Confirm removal of this workspace node?")) {
                     appState.workspaces.splice(currentEditIndex, 1);
                     window.saveCurrentState();
+                    renderWorkspaces(); // Immediate visual feedback
                     dialog.close();
                 }
             }
