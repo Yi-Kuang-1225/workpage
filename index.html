@@ -83,13 +83,11 @@
     <div class="relative flex min-h-screen w-full flex-col overflow-x-hidden">
         
         <!-- Sidebar: The Strategic Oversight Panel -->
-        <!-- Fixed layout structure: Logo is pinned, content scrolls -->
         <aside class="fixed left-0 top-0 bottom-0 w-[320px] glass z-50 hidden md:flex flex-col">
             
             <!-- Fixed Strategic Totem (Logo) - Pinned to Top -->
             <div class="px-6 pt-10 pb-6 border-b border-slate-100/80 shrink-0 bg-white/50 backdrop-blur-sm z-20">
                 <div class="flex flex-col items-start gap-4">
-                    <!-- Enlarged Logo Container -->
                     <div class="w-full max-w-[240px]">
                         <svg class="w-full h-auto drop-shadow-sm" fill="none" viewBox="0 0 100 60" xmlns="http://www.w3.org/2000/svg">
                             <rect fill="#00338D" height="15" width="100"></rect>
@@ -347,12 +345,13 @@
     </dialog>
     
     <script>
-        // Offline Capability Engine (LocalStorage) - Updated to v6 for new structure
-        const STORAGE_KEY = 'moea_hub_state_v6_offline';
+        // Offline Capability Engine (LocalStorage) - Updated to v7 for attendance tracking
+        const STORAGE_KEY = 'moea_hub_state_v7_offline';
         let isConfigMode = false;
         
         // Default Strategy Layout (Updated Strategic Resources)
         const defaultState = {
+            checkInTime: "08:45", // Attendance now part of core state
             tasks: [
                 { id: "t1", text: "Review Trade Policy Draft", meta: "International Trade • 14:00", done: false },
                 { id: "t2", text: "Internal Budget Sync", meta: "Finance • 16:30", done: false },
@@ -415,14 +414,24 @@
                     appState = { ...defaultState, ...parsed }; // Merge to ensure structure
                     if(!appState.tasks) appState.tasks = defaultState.tasks;
                     if(!appState.workspaces) appState.workspaces = defaultState.workspaces;
+                    // Ensure checkInTime exists if migrating from older version
+                    if(!appState.checkInTime) appState.checkInTime = defaultState.checkInTime;
                 } catch(e) {
                     console.error("Local Intel Corrupted, resetting to default protocol.");
                     appState = JSON.parse(JSON.stringify(defaultState));
                 }
             } else {
-                // First time loading v6, save defaults immediately
+                // First time loading v7, save defaults immediately
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
             }
+            
+            // Restore Time state
+            const checkInInput = document.getElementById('check-in-time');
+            if(checkInInput) {
+                checkInInput.value = appState.checkInTime;
+                calculateOffDuty(); // Recalculate based on saved time
+            }
+
             renderAll();
         }
 
@@ -456,7 +465,11 @@
         const checkInInput = document.getElementById('check-in-time');
         const offDutyDisplay = document.getElementById('off-duty-time');
 
-        checkInInput.addEventListener('change', calculateOffDuty);
+        checkInInput.addEventListener('change', (e) => {
+            appState.checkInTime = e.target.value; // Capture state
+            window.saveCurrentState(); // Commit to storage
+            calculateOffDuty();
+        });
         
         function calculateOffDuty() {
             const val = checkInInput.value; // HH:mm
@@ -474,7 +487,7 @@
             
             offDutyDisplay.textContent = `${formattedH}:${formattedM}`;
         }
-        calculateOffDuty(); // Initial calc
+        // No initial call here, done in initApp to respect saved state
 
         // --- UI Rendering Logic ---
 
